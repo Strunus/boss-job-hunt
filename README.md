@@ -31,7 +31,7 @@
 
 ## 安装
 
-1. 下载本仓库，或 `git clone https://github.com/Strunus/job-hunt-extension`
+1. 下载本仓库，或 `git clone https://github.com/Strunus/boss-job-hunt`
 2. 打开 `chrome://extensions`
 3. 右上角开启「开发者模式」
 4. 「加载已解压的扩展程序」→ 选择仓库根目录
