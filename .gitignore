@@ -1,0 +1,19 @@
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 依赖与缓存
+node_modules/
+__pycache__/
+*.pyc
+
+# 本地产物
+*.zip
+*.local.json
+*.log
+
+# 截图与简历（避免误提交个人材料）
+screenshots/
+*.pdf

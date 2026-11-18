@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>求职面板</title>
+<style>
+  :root {
+    --bg:#fff; --panel:#f7f8fa; --fg:#1a1a1a; --sub:#6b7280; --line:#e5e7eb;
+    --brand:#2563eb; --ok:#059669; --warn:#b45309; --bad:#dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1b1d21; --panel:#23262b; --fg:#e8e8ea; --sub:#9aa0a6;
+            --line:#33373d; --brand:#5b8def; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; height:100vh; display:flex; flex-direction:column;
+         font:13px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         background:var(--bg); color:var(--fg); }
+  header { display:flex; align-items:center; gap:8px; padding:10px 12px;
+           border-bottom:1px solid var(--line); flex-shrink:0; }
+  header b { font-size:13px; }
+  .muted { color:var(--sub); font-size:11px; }
+  .spacer { flex:1; }
+  .tabs { display:flex; gap:6px; padding:8px 12px; border-bottom:1px solid var(--line); flex-shrink:0; }
+  .filters { display:flex; gap:6px; padding:8px 12px; border-bottom:1px solid var(--line);
+             flex-shrink:0; align-items:center; flex-wrap:wrap; }
+  .filters select {
+    font-size:11px; padding:3px 6px; border-radius:8px; border:1px solid var(--line);
+    background:transparent; color:var(--fg); max-width:110px;
+  }
+  .menu {
+    display:none; position:fixed; left:12px; bottom:56px; z-index:10;
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 10px 28px rgba(0,0,0,.18); padding:4px; min-width:150px;
+  }
+  .menu.show { display:block; }
+  .menu button {
+    display:block; width:100%; text-align:left; padding:7px 10px; border:none;
+    background:transparent; color:var(--fg); font-size:12px; cursor:pointer; border-radius:7px;
+  }
+  .menu button:hover { background:var(--panel); }
+  .tab { padding:3px 10px; border-radius:999px; border:1px solid var(--line);
+         background:transparent; color:var(--sub); cursor:pointer; font-size:12px; }
+  .tab.active { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .list { flex:1; overflow:auto; }
+  .row { padding:9px 12px; border-bottom:1px solid var(--line); }
+  .row-top { display:flex; align-items:baseline; gap:6px; }
+  .score { flex-shrink:0; min-width:26px; text-align:center; padding:1px 5px; border-radius:6px;
+           font-size:11px; font-weight:600; color:#fff; background:var(--sub); }
+  .score.hi { background:var(--ok); } .score.mid { background:var(--warn); }
+  .title { font-weight:600; color:var(--fg); text-decoration:none; flex:1; }
+  .title:hover { color:var(--brand); }
+  .meta { color:var(--sub); font-size:11px; margin-top:2px; }
+  .acts { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  button.chip { font-size:11px; padding:2px 9px; border-radius:999px; cursor:pointer;
+                border:1px solid var(--line); background:transparent; color:var(--sub); }
+  button.chip:hover { border-color:var(--brand); color:var(--brand); }
+  button.chip.applied { border-color:var(--ok); color:var(--ok); background:rgba(5,150,105,.10); }
+  button.chip.rejected { border-color:var(--bad); color:var(--bad); background:rgba(220,38,38,.10); }
+  /* 各按钮配色：理由=蓝，已投递=绿，不合适=红，取消=灰，删除=暗红 */
+  button.chip.c-reason { color:var(--brand); border-color:rgba(37,99,235,.45); }
+  button.chip.c-reason:hover { background:rgba(37,99,235,.10); }
+  button.chip.c-apply { color:var(--ok); border-color:rgba(5,150,105,.45); }
+  button.chip.c-apply:hover { background:rgba(5,150,105,.12); }
+  button.chip.c-reject { color:var(--bad); border-color:rgba(220,38,38,.45); }
+  button.chip.c-reject:hover { background:rgba(220,38,38,.12); }
+  button.chip.c-undo { color:var(--sub); border-color:var(--line); }
+  button.chip.c-undo:hover { color:var(--fg); border-color:var(--fg); }
+  button.chip.c-del { color:#b91c1c; border-color:rgba(185,28,28,.30); }
+  button.chip.c-del:hover { background:rgba(185,28,28,.12); border-color:rgba(185,28,28,.6); }
+  .stamp { color:var(--sub); font-size:10.5px; margin-top:1px; opacity:.85; }
+  .reason { margin-top:6px; padding:7px 9px; border-radius:8px; background:var(--panel);
+            font-size:11.5px; white-space:pre-wrap; }
+  .reason .k { color:var(--sub); }
+  footer { display:flex; gap:6px; padding:9px 12px; border-top:1px solid var(--line);
+           flex-shrink:0; align-items:center; flex-wrap:wrap; }
+  footer button { font-size:12px; padding:5px 11px; border-radius:8px; cursor:pointer;
+                  border:1px solid var(--line); background:transparent; color:var(--fg); }
+  footer button.primary { background:var(--brand); border-color:var(--brand); color:#fff; }
+  footer button:disabled { opacity:.55; cursor:default; }
+  .toast { font-size:11px; color:var(--sub); margin-left:auto; max-width:48%; text-align:right; }
+  .empty { padding:26px 16px; text-align:center; color:var(--sub); font-size:12px; }
+  .settings { display:none; padding:12px; border-bottom:1px solid var(--line);
+              overflow:auto; max-height:60vh; }
+  .settings.show { display:block; }
+  .settings label { display:block; font-size:11px; color:var(--sub); margin:8px 0 3px; }
+  .settings input, .settings textarea {
+    width:100%; padding:6px 8px; border-radius:8px; border:1px solid var(--line);
+    background:transparent; color:var(--fg); font-size:12px; font-family:inherit;
+  }
+  .settings textarea { height:110px; resize:vertical; line-height:1.5; }
+  .settings .row2 { display:flex; gap:6px; margin-top:10px; }
+</style>
+</head>
+<body>
+  <header>
+    <b>求职</b>
+    <span class="muted" id="hint">未配置</span>
+    <span class="spacer"></span>
+    <button class="chip" id="gear" title="设置">⚙</button>
+  </header>
+
+  <div class="settings" id="settings">
+    <label>API 地址（OpenAI 兼容）</label>
+    <input id="apiBase" placeholder="https://api.deepseek.com/v1" />
+    <label>API Key</label>
+    <input id="apiKey" type="password" placeholder="sk-..." />
+    <div class="row2">
+      <button class="chip" id="testCfg">测试连接并获取模型</button>
+      <span class="muted" id="cfgStatus"></span>
+    </div>
+    <label>模型（测试成功后从接口返回里选）</label>
+    <select id="modelSel"><option value="">— 先测试连接 —</option></select>
+    <input id="model" placeholder="或手动输入模型名（如 deepseek-chat）" style="margin-top:4px" />
+    <label>候选人画像</label>
+    <textarea id="profile" placeholder="可以手写，也可以上传简历自动生成"></textarea>
+    <div class="row2">
+      <button class="chip" id="pickResume">上传简历生成画像</button>
+      <input type="file" id="resumeFile" accept=".pdf,.txt,.md" style="display:none" />
+      <span class="muted" id="resumeStatus"></span>
+    </div>
+    <div class="row2">
+      <button class="chip" id="saveCfg">保存</button>
+      <button class="chip" id="closeCfg">收起</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="pick">收录 <span id="n-pick">0</span></button>
+    <button class="tab" data-tab="applied">已投递 <span id="n-applied">0</span></button>
+    <button class="tab" data-tab="rejected">不合适 <span id="n-rejected">0</span></button>
+  </div>
+
+  <div class="filters" id="filters">
+    <select id="fIndustry"><option value="">全部行业</option></select>
+    <select id="fScale"><option value="">全部规模</option></select>
+    <select id="fCity"><option value="">全部地区</option></select>
+    <button class="chip" id="clearFilters" title="清空筛选">清空</button>
+  </div>
+
+  <div class="list" id="list"><div class="empty">打开 BOSS 岗位详情页，点「收录当前页」</div></div>
+
+  <footer>
+    <button class="primary" id="capture">收录当前页</button>
+    <button id="more">更多</button>
+    <button id="openList">打开 BOSS</button>
+    <span class="toast" id="toast"></span>
+  </footer>
+
+  <div class="menu" id="menu">
+    <button id="rescoreAll">全部重新打分</button>
+    <button id="diagnose">查看诊断</button>
+  </div>
+
+  <script src="vendor/pdf.min.js"></script>
+  <script src="store.js"></script>
+  <script src="llm.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

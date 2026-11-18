@@ -1,0 +1,7 @@
+# 统一换行符，避免 Windows 提交后 GitHub 上满屏 diff
+* text=auto eol=lf
+
+# 二进制
+*.png binary
+*.jpg binary
+*.ico binary
